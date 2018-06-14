@@ -1,5 +1,4 @@
 # node.js implementation of the indy-agent
-#### Note: The indy-agent is a work in progress and is not ready for use.
 
 ## Quick start guide
 * `git clone https://github.com/hyperledger/indy-sdk.git` and follow [the instructions](https://github.com/hyperledger/indy-sdk/tree/master/doc) to build libindy for your system.
@@ -21,11 +20,19 @@ npm start # Starts the node.js express server
 ```
 * Then go to http://localhost:3000
 
-## Basic Design Overview
-The agent is a simple http server that can receive messages [POST](https://en.wikipedia.org/wiki/POST_(HTTP))ed to the /indy endpoint.  Those messages are stored for the user to make decisions on later through the UI. The UI is used to:
+## Agent Configuration
+The agent can be configured using the following environment variables, or the values can be edited directly in `config.js`
 
-* Create new relationships
-* Decide to accept new relationship requests
-* Send and manage Credentials
-* Make and request proofs
+```
+PUBLIC_DID_ENDPOINT=10.0.0.2:3000
+TEST_POOL_IP=10.0.0.2
+PORT=3000
+WALLET_NAME=wallet_3000
+FIRST_NAME=Alice
+MIDDLE_NAME=Rebecca
+LAST_NAME=Garcia
+AGE=22
+GENDER=F
+```
 
+Where PUBLIC_DID_ENDPOINT refers to the host and port your agent is running at, and the TEST_POOL_IP refers to the ip address of the running ledger.
