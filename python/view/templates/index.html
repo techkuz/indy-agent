@@ -109,7 +109,7 @@
 
     <footer class="footer">
       <div class="container">
-        <span class="text-muted">Place sticky footer content here.</span>
+        <span class="text-muted">Your UI token is: <span id="ui_token">{{ ui_token }}</span></span>
       </div>
     </footer>
 
@@ -122,6 +122,7 @@
 
     <script>
     </script>
+    {% raw %}
     <script id="connections-template" type="text/x-handlebars-template">
         <div id='connections' class='list-group-flush'>
         {{#each connections}}
@@ -132,6 +133,7 @@
         {{/each}}
         </div>
     </script>
+    {% endraw %}
     <script id="connection-template" type="text/x-handlebars-template">
         <div class='list-group-item flex-column disabled'>
           <span class='avatar circle'></span>

@@ -1,4 +1,7 @@
 import json
+import aiohttp_jinja2
+import jinja2
+
 from aiohttp import web
 from model import Message, Agent
 from message_types import UI
@@ -14,6 +17,7 @@ async def ui_connect(_, agent: Agent) -> Message:
         }
     )
 
+@aiohttp_jinja2.template('index.html')
 async def root(request):
     agent = request.app['agent']
     agent.endpoint = request.url.scheme + '://' + request.url.host
@@ -21,4 +25,4 @@ async def root(request):
         agent.endpoint += ':' + str(request.url.port) + '/indy'
     else:
         agent.endpoint += '/indy'
-    return web.FileResponse('view/index.html')
+    return {'ui_token': agent.ui_token}
