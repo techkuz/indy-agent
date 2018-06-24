@@ -9,6 +9,8 @@
         INITIALIZE: "urn:sovrin:agent:message_type:sovrin.org/ui/initialize",
         OFFER_RECEIVED: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_received",
         OFFER_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_sent",
+        OFFER_ACCEPTED: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_accepted",
+        OFFER_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_rejected",
     }
 
     // Message Router {{{
@@ -98,12 +100,55 @@
         function (socket, msg) {
             context = {id: msg.id, name: msg.message.name, status: 'pending'};
             document.getElementById('connections-wrapper').innerHTML += connection_template(context);
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     removeElementById(msg.message.name);
+                     rej_msg = {
+                        type: MESSAGE_TYPES.OFFER_REJECTED,
+                        id: TOKEN,
+                        message: {
+                            name: msg.message.name
+                        }
+                     }
+                     socket.send(JSON.stringify(rej_msg));
+                }
+            );
+
         },
         offer_recieved:
         function (socket, msg) {
             context = {name: msg.message.name, status: 'pending'};
             document.getElementById('connections-wrapper').innerHTML += connection_template(context);
-        }
+            document.getElementById(msg.message.name + '_accept').addEventListener(
+                "click",
+                function (event) {
+                    removeElementById(msg.message.name + '_accept');
+                    acc_msg = {
+                        type: MESSAGE_TYPES.OFFER_ACCEPTED,
+                        id: TOKEN,
+                        message: {
+                        name: msg.message.name
+                        }
+                    }
+                    socket.send(JSON.stringify(acc_msg));
+                }
+            );
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     removeElementById(msg.message.name);
+                     rej_msg = {
+                        type: MESSAGE_TYPES.OFFER_REJECTED,
+                        id: TOKEN,
+                        message: {
+                            name: msg.message.name
+                        }
+                     }
+                     socket.send(JSON.stringify(rej_msg));
+                }
+            );
+        },
     };
     // }}}
 
