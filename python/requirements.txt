@@ -1,0 +1,5 @@
+aiohttp==3.3.2
+aiohttp-index==0.1
+aiohttp-jinja2==1.0.0
+python3-indy==1.4.0
+serpy==0.3.1
