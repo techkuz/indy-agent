@@ -100,6 +100,7 @@
         function (socket, msg) {
             context = {id: msg.id, name: msg.message.name, status: 'pending'};
             document.getElementById('connections-wrapper').innerHTML += connection_template(context);
+            removeElementById(msg.message.name + '_accept');
             document.getElementById(msg.message.name + '_reject').addEventListener(
                 "click",
                 function (event) {
