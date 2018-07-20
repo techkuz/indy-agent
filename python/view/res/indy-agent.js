@@ -6,10 +6,21 @@
         STATE: "urn:sovrin:agent:message_type:sovrin.org/ui/state",
         STATE_REQUEST: "urn:sovrin:agent:message_type:sovrin.org/ui/state_request",
         SEND_OFFER: "urn:sovrin:agent:message_type:sovrin.org/ui/send_offer",
+        SEND_OFFER_ACCEPTED: "urn:sovrin:agent:message_type:sovrin.org/ui/send_offer_accepted",
+        SENDER_SEND_OFFER_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/sender_send_offer_rejected",
+        RECEIVER_SEND_OFFER_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/receiver_send_offer_rejected",
+        SENDER_OFFER_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/sender_offer_rejected",
+        RECEIVER_OFFER_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/receiver_offer_rejected",
+        SEND_CONN_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/send_connection_rejected",
         INITIALIZE: "urn:sovrin:agent:message_type:sovrin.org/ui/initialize",
         OFFER_RECEIVED: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_received",
         OFFER_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_sent",
-    }
+        OFFER_ACCEPTED: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_accepted",
+        OFFER_ACCEPTED_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/offer_accepted_sent",
+        CONN_REJECTED: "urn:sovrin:agent:message_type:sovrin.org/ui/connection_rejected"
+    };
+
+    var connections_wrapper = $('#connections-wrapper');
 
     // Message Router {{{
     var msg_router = {
@@ -43,16 +54,12 @@
         },
         update:
         function (socket, msg) {
-            state = msg.message
+            state = msg.message;
             if (state.initialized == false) {
                 showTab('login');
             } else {
                 document.getElementById('agent_name').value = state.agent_name;
                 document.getElementById('agent_name_header').innerHTML = state.agent_name;
-                conn_wrapper = document.getElementById('connections-wrapper');
-                context = {'connections': state.connections};
-                content = connections_template(context);
-                conn_wrapper.innerHTML = content;
                 showTab('relationships');
             }
         },
@@ -91,25 +98,136 @@
                     name: document.getElementById('send_name').value,
                     endpoint: document.getElementById('send_endpoint').value
                 }
-            }
+            };
             socket.send(JSON.stringify(msg));
         },
         offer_sent:
         function (socket, msg) {
-            context = {id: msg.id, name: msg.message.name, status: 'pending'};
-            document.getElementById('connections-wrapper').innerHTML += connection_template(context);
+            var context = {name: msg.message.name};
+            var contextObj = pending_connection_template(context);
+            connections_wrapper.append(contextObj);
+
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     connections.sender_send_offer_rejected(socket, msg);
+                }
+            );
         },
         offer_recieved:
         function (socket, msg) {
-            context = {name: msg.message.name, status: 'pending'};
-            document.getElementById('connections-wrapper').innerHTML += connection_template(context);
+            var context = {name: msg.message.name};
+            var contextObj = received_connection_template(context);
+            connections_wrapper.append(contextObj);
+
+            document.getElementById(msg.message.name + '_accept').addEventListener(
+                "click",
+                function (event) {
+                    connections.send_offer_accepted(socket, msg)
+                }
+            );
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     connections.receiver_send_offer_rejected(socket, msg)
+                }
+            );
+        },
+        send_offer_accepted:
+        function (socket, msg) {
+            accepted_msg = {
+                type: MESSAGE_TYPES.SEND_OFFER_ACCEPTED,
+                id: TOKEN,
+                message: {
+                        name: msg.message.name,
+                        id: msg.message.id
+                }
+            };
+            socket.send(JSON.stringify(accepted_msg));
+        },
+        offer_accepted_sent:
+        function (socket, msg) {
+            var context = {name: msg.message.name};
+            var contextObj = connection_template(context);
+            removeElementById(msg.message.name + '_received');
+            connections_wrapper.append(contextObj);
+
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     connections.send_conn_rejected(socket, msg)
+                }
+            );
+        },
+        offer_accepted:
+        function (socket, msg) {
+            var context = {name: msg.message.name};
+            var contextObj = connection_template(context);
+            removeElementById(msg.message.name + '_pending');
+            connections_wrapper.append(contextObj);
+
+            document.getElementById(msg.message.name + '_reject').addEventListener(
+                "click",
+                function (event) {
+                     connections.send_conn_rejected(socket, msg)
+                }
+            );
+        },
+        receiver_send_offer_rejected:
+        function (socket, msg) {
+            rejected_msg = {
+                type: MESSAGE_TYPES.RECEIVER_SEND_OFFER_REJECTED,
+                id: TOKEN,
+                message: {
+                        name: msg.message.name,
+                        id: msg.message.id
+                }
+            };
+            socket.send(JSON.stringify(rejected_msg));
+        },
+        sender_send_offer_rejected:
+        function (socket, msg) {
+            rejected_msg = {
+                type: MESSAGE_TYPES.SENDER_SEND_OFFER_REJECTED,
+                id: TOKEN,
+                message: {
+                        name: msg.message.name,
+                        id: msg.message.id
+                }
+            };
+            socket.send(JSON.stringify(rejected_msg));
+        },
+        sender_offer_rejected:
+        function (socket, msg) {
+            removeElementById(msg.message['name'] + '_pending');
+        },
+        receiver_offer_rejected:
+        function (socket, msg) {
+            removeElementById(msg.message['name'] + '_received');
+        },
+        send_conn_rejected:
+        function (socket, msg) {
+            rejected_msg = {
+                type: MESSAGE_TYPES.SEND_CONN_REJECTED,
+                id: TOKEN,
+                message: {
+                        name: msg.message.name,
+                        id: msg.message.id
+                }
+            };
+            socket.send(JSON.stringify(rejected_msg));
+        },
+        conn_rejected:
+        function (socket, msg) {
+            removeElementById(msg.message.name + '_connection')
         }
     };
     // }}}
 
     // Templates {{{
 
-    const connections_template = Handlebars.compile(document.getElementById('connections-template').innerHTML);
+    const pending_connection_template = Handlebars.compile(document.getElementById('pending_connection-template').innerHTML);
+    const received_connection_template = Handlebars.compile(document.getElementById('received_connection-template').innerHTML);
     const connection_template = Handlebars.compile(document.getElementById('connection-template').innerHTML);
 
     // }}}
@@ -118,6 +236,11 @@
     msg_router.register(MESSAGE_TYPES.STATE, ui_agent.update);
     msg_router.register(MESSAGE_TYPES.OFFER_SENT, connections.offer_sent);
     msg_router.register(MESSAGE_TYPES.OFFER_RECEIVED, connections.offer_recieved);
+    msg_router.register(MESSAGE_TYPES.OFFER_ACCEPTED, connections.offer_accepted);
+    msg_router.register(MESSAGE_TYPES.OFFER_ACCEPTED_SENT, connections.offer_accepted_sent);
+    msg_router.register(MESSAGE_TYPES.SENDER_OFFER_REJECTED, connections.sender_offer_rejected);
+    msg_router.register(MESSAGE_TYPES.RECEIVER_OFFER_REJECTED, connections.receiver_offer_rejected);
+    msg_router.register(MESSAGE_TYPES.CONN_REJECTED, connections.conn_rejected);
 
     // }}}
     
