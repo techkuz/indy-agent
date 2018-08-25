@@ -9,10 +9,16 @@
 # pylint: disable=invalid-name
 
 import asyncio
-import os
 import sys
-import json
 import uuid
+import aiohttp_jinja2
+import jinja2
+
+import modules.connection as connection
+import modules.init as init
+import modules.ui as ui
+import serializer.json_serializer as Serializer
+
 from aiohttp import web
 
 from receiver.message_receiver import MessageReceiver as Receiver
@@ -20,10 +26,7 @@ from router.simple_router import SimpleRouter as Router
 from ui_event import UIEventQueue
 from model import Agent
 from message_types import CONN, UI
-import modules.connection as connection
-import modules.init as init
-import modules.ui as ui
-import serializer.json_serializer as Serializer
+
 
 if len(sys.argv) == 2 and str.isdigit(sys.argv[1]):
     PORT = int(sys.argv[1])
@@ -33,6 +36,9 @@ else:
 LOOP = asyncio.get_event_loop()
 
 AGENT = web.Application()
+
+aiohttp_jinja2.setup(AGENT,
+                     loader=jinja2.FileSystemLoader('view'))
 
 AGENT['msg_router'] = Router()
 AGENT['msg_receiver'] = Receiver()

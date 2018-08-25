@@ -14,18 +14,20 @@ async def initialize_agent(msg, agent):
     data = msg.message
     agent.owner = data['name']
     passphrase = data['passphrase']
+    wallet_config = json.dumps({"id": "wallet"})
+    wallet_credentials = json.dumps({"key": "wallet_key"})
 
     wallet_name = '%s-wallet' % agent.owner
 
     # pylint: disable=bare-except
     # TODO: better handle potential exceptions.
     try:
-        await wallet.create_wallet('pool1', wallet_name, None, None, json.dumps({"key": passphrase}))
+        await wallet.create_wallet(wallet_config, wallet_credentials)
     except Exception as e:
         print(e)
 
     try:
-        agent.wallet_handle = await wallet.open_wallet(wallet_name, None, json.dumps({"key": passphrase}))
+        agent.wallet_handle = await wallet.open_wallet(wallet_config, wallet_credentials)
     except Exception as e:
         print(e)
         print("Could not open wallet!")
