@@ -18,3 +18,12 @@ function getTodayDate() {
 
     return currentDate;
 }
+
+function showTab(id) {
+        let i;
+        let x = document.getElementsByClassName("tab");
+        for (i = 0; i < x.length; i++) {
+            x[i].style.display = "none";
+        }
+        document.getElementById(id).style.display = "block";
+    }
