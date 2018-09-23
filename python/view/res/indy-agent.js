@@ -29,8 +29,6 @@
         }
     };
 
-    // var message_display = $('#message_display');
-
     // Message Router {{{
     var msg_router = {
         routes: [],
@@ -106,12 +104,14 @@
 
         invite_sent:
         function (socket, msg) {
-            displayConnection(msg.content.name, msg.content.id, [], 'Invite sent');
+            displayConnection(msg.content.name, [], 'Invite sent');
         },
 
         invite_received:
         function (socket, msg) {
-            displayConnection(msg.content.name, msg.content.id, [['Send Request', connections.send_request, socket, msg]], 'Invite received');
+            document.getElementById("history_body").innerText = getTodayDate() + ": " + displayObject(msg.content.history);
+
+            displayConnection(msg.content.name, [['Send Request', connections.send_request, socket, msg]], 'Invite received');
         },
 
         send_request:
@@ -131,13 +131,15 @@
 
         request_sent:
         function (socket, msg) {
-            removeRow(msg.content.name)
-            displayConnection(msg.content.name, msg.content.id, [], 'Request sent');
+            removeRow(msg.content.name);
+            displayConnection(msg.content.name, [], 'Request sent');
         },
 
         request_received:
         function (socket, msg) {
-            displayConnection(msg.content.name, msg.content.id, [['Send response', connections.send_response, socket, msg]], 'Request received');
+            document.getElementById("history_body").innerText = getTodayDate() + ": " + displayObject(msg.content.history);
+            removeRow(msg.content.name);
+            displayConnection(msg.content.name, [['Send response', connections.send_response, socket, msg]], 'Request received');
         },
 
         send_response:
@@ -157,12 +159,15 @@
 
         response_sent:
         function (socket, msg) {
-            displayConnection(msg.content.name, msg.content.id, [], 'Response sent');
+            removeRow(msg.content.name);
+            displayConnection(msg.content.name, [], 'Response sent');
         },
 
         response_received:
         function (socket, msg) {
-            displayConnection(msg.content.name, msg.content.id, [], 'Response received');
+            document.getElementById("history_body").innerText += getTodayDate() + ": " + displayObject(msg.content.history);
+            removeRow(msg.content.name);
+            displayConnection(msg.content.name, [], 'Response received');
         },
 
     };
@@ -178,9 +183,6 @@
     msg_router.register(MESSAGE_TYPES.UI.RESPONSE_RECEIVED, connections.response_received);
     msg_router.register(MESSAGE_TYPES.UI.REQUEST_RECEIVED, connections.request_received);
     msg_router.register(MESSAGE_TYPES.UI.RESPONSE_SENT, connections.response_sent);
-
-
-
 
     // }}}
 
@@ -214,7 +216,7 @@
         }
     );
 
-    function displayConnection(connName, connId, actions, status) {
+    function displayConnection(connName, actions, status) {
         let row = connectionsTable.insertRow();
         row.id = connName + "_row";
         let cell1 = row.insertCell();
@@ -230,22 +232,6 @@
         history_btn.textContent = "View";
         history_btn.setAttribute('data-toggle', 'modal');
         history_btn.setAttribute('data-target', '#exampleModal');
-
-        history_btn.addEventListener(
-            "click",
-            function (event) {
-                if(status === "Connected") {
-                    document.getElementById("history_body").innerText = conns[connId].join('');
-                }
-                else if(status === "Pending") {
-                    document.getElementById("history_body").innerText = pending_conns[connId].join('');
-                }
-                else if(status === "Received") {
-                    document.getElementById("history_body").innerText = received_conns[connId].join('');
-                }
-
-            }
-        );
 
         actions.forEach(function (item, i, actions) {
             let butn = document.createElement("button");

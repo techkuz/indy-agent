@@ -45,7 +45,9 @@ async def invite_received(msg, agent):
 
     return Message(
         type=UI_NEW.INVITE_RECEIVED,
-        content={'name': conn_name,'endpoint': msg.content['endpoint']}
+        content={'name': conn_name,
+                 'endpoint': msg.content['endpoint'],
+                 'history': msg}
     )
 
 
@@ -133,7 +135,7 @@ async def request_received(msg, agent):
     identity_json = json.dumps(
         {
             "did": sender_did_str,
-            # we don't use verkey later
+            # TODO: we don't use verkey later
             "verkey": sender_key_str
         }
     )
@@ -148,17 +150,16 @@ async def request_received(msg, agent):
 
     await did.set_did_metadata(agent.wallet_handle, sender_did_str, meta_json)
 
-    request_received_msg = Message(
+    return Message(
         type=UI_NEW.REQUEST_RECEIVED,
         content={
             'name': conn_name,
             'endpoint_uri': sender_endpoint_uri,
             'endpoint_key': endpoint_key,
-            'endpoint_did': sender_did_str
+            'endpoint_did': sender_did_str,
+            'history': msg
         }
     )
-
-    return request_received_msg
 
 
 async def send_response(msg, agent):
@@ -214,7 +215,8 @@ async def response_received(msg, agent):
     return Message(
         type=UI_NEW.RESPONSE_RECEIVED,
         id=agent.ui_token,
-        content={'name': conn_name}
+        content={'name': conn_name,
+                 'history': msg}
     )
 
 

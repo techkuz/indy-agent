@@ -8,6 +8,10 @@ function removeRow(connName) {
     removeElementById(connName + '_row');
 }
 
+function displayObject(obj) {
+    return JSON.stringify(obj, null, 4); // beautiful indented obj.
+}
+
 function getTodayDate() {
     var tdate = new Date();
     var dd = tdate.getDate(); //yields day
