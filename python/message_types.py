@@ -21,8 +21,10 @@ class UI_NEW:
 
     SEND_REQUEST = "urn:sovrin:agent:message_type:sovrin.org/ui/send_request"
     REQUEST_SENT = "urn:sovrin:agent:message_type:sovrin.org/ui/request_sent"
-    REQUEST_RECEIVED = "urn:sovrin:agent:message_type:sovrin.org/ui/request_received"
-    FTK_RECEIVED = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward_to_key"
+    REQUEST_RECEIVED= "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request"
+
+    RESPONSE_RECEIVED = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response"
+
 
     SEND_RESPONSE = "urn:sovrin:agent:message_type:sovrin.org/ui/send_response"
     RESPONSE_SENT = "urn:sovrin:agent:message_type:sovrin.org/ui/response_sent"
@@ -30,7 +32,5 @@ class UI_NEW:
 
 class CONN_NEW:
     SEND_INVITE = "urn:sovrin:agent:message_type:sovrin.org/connection/send_invite"
-    SEND_REQUEST = "urn:sovrin:agent:message_type:sovrin.org/connection/send_request"
-    FORWARD_TO_KEY = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward_to_key"
-    FORWARD = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward"
-
+    SEND_REQUEST = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request"
+    SEND_RESPONSE = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response"

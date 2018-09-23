@@ -18,12 +18,11 @@
 
             SEND_REQUEST: "urn:sovrin:agent:message_type:sovrin.org/ui/send_request",
             REQUEST_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/request_sent",
-            REQUEST_RECEIVED: "urn:sovrin:agent:message_type:sovrin.org/ui/request_received",
-
-            FTK_RECEIVED: "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward_to_key",
+            REQUEST_RECEIVED: "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
 
             SEND_RESPONSE: "urn:sovrin:agent:message_type:sovrin.org/ui/send_response",
-            RESPONSE_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/response_sent"
+            RESPONSE_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/response_sent",
+            RESPONSE_RECEIVED: "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response"
         },
         CONN: {
 
@@ -58,13 +57,13 @@
                 {
                     type: MESSAGE_TYPES.STATE_REQUEST,
                     id: TOKEN,
-                    message: null
+                    content: null
                 }
             ));
         },
         update:
         function (socket, msg) {
-            state = msg.message;
+            state = msg.content;
             if (state.initialized === false) {
                 showTab('login');
             } else {
@@ -78,7 +77,7 @@
             init_message = {
                 type: MESSAGE_TYPES.INITIALIZE,
                 id: TOKEN,
-                message: {
+                content: {
                     name: document.getElementById('agent_name').value,
                     passphrase: document.getElementById('passphrase').value
                 }
@@ -96,7 +95,7 @@
             msg = {
                 type: MESSAGE_TYPES.UI.SEND_INVITE,
                 id: TOKEN,
-                message: {
+                content: {
                     name: document.getElementById('send_name').value,
                     endpoint: document.getElementById('send_endpoint').value
                 }
@@ -107,12 +106,12 @@
 
         invite_sent:
         function (socket, msg) {
-            displayConnection(msg.message.name, msg.message.id, [], 'Invite sent');
+            displayConnection(msg.content.name, msg.content.id, [], 'Invite sent');
         },
 
         invite_received:
         function (socket, msg) {
-            displayConnection(msg.message.name, msg.message.id, [['Send Request', connections.send_request, socket, msg]], 'Invite received');
+            displayConnection(msg.content.name, msg.content.id, [['Send Request', connections.send_request, socket, msg]], 'Invite received');
         },
 
         send_request:
@@ -120,10 +119,10 @@
             msg = {
                 type: MESSAGE_TYPES.UI.SEND_REQUEST,
                 id: TOKEN,
-                message: {
-                        name: prevMsg.message.name,
-                        endpoint: prevMsg.message.endpoint.url,
-                        key: prevMsg.message.endpoint.verkey,
+                content: {
+                        name: prevMsg.content.name,
+                        endpoint: prevMsg.content.endpoint.url,
+                        key: prevMsg.content.endpoint.verkey,
                 }
             };
             socket.send(JSON.stringify(msg));
@@ -132,33 +131,39 @@
 
         request_sent:
         function (socket, msg) {
-            displayConnection(msg.message.name, msg.message.id, [], 'Request sent');
+            removeRow(msg.content.name)
+            displayConnection(msg.content.name, msg.content.id, [], 'Request sent');
         },
 
-        ftk_received:
+        request_received:
         function (socket, msg) {
-            displayConnection(msg.message.name, msg.message.id, [['Send response', connections.send_response, socket, msg]], 'Request received');
+            displayConnection(msg.content.name, msg.content.id, [['Send response', connections.send_response, socket, msg]], 'Request received');
         },
 
         send_response:
-        function (socket, msg) {
+        function (socket, prevMsg) {
             msg = {
                 type: MESSAGE_TYPES.UI.SEND_RESPONSE,
                 id: TOKEN,
-                message: {
-                        name: msg.message.name,
-                        endpoint_key: msg.message.endpoint_key,
-                        endpoint_uri: msg.message.endpoint_uri,
+                content: {
+                        name: prevMsg.content.name,
+                        endpoint_key: prevMsg.content.endpoint_key,
+                        endpoint_uri: prevMsg.content.endpoint_uri,
+                        endpoint_did: prevMsg.content.endpoint_did
                 }
             };
-
             socket.send(JSON.stringify(msg));
         },
 
         response_sent:
         function (socket, msg) {
-            displayConnection(msg.message.name, msg.message.id, [], 'Response sent');
-        }
+            displayConnection(msg.content.name, msg.content.id, [], 'Response sent');
+        },
+
+        response_received:
+        function (socket, msg) {
+            displayConnection(msg.content.name, msg.content.id, [], 'Response received');
+        },
 
     };
     // }}}
@@ -170,8 +175,8 @@
     msg_router.register(MESSAGE_TYPES.UI.INVITE_SENT, connections.invite_sent);
     msg_router.register(MESSAGE_TYPES.UI.INVITE_RECEIVED, connections.invite_received);
     msg_router.register(MESSAGE_TYPES.UI.REQUEST_SENT, connections.request_sent);
-    // msg_router.register(MESSAGE_TYPES.UI.REQUEST_RECEIVED, connections.request_received);
-    msg_router.register(MESSAGE_TYPES.UI.FTK_RECEIVED, connections.ftk_received);
+    msg_router.register(MESSAGE_TYPES.UI.RESPONSE_RECEIVED, connections.response_received);
+    msg_router.register(MESSAGE_TYPES.UI.REQUEST_RECEIVED, connections.request_received);
     msg_router.register(MESSAGE_TYPES.UI.RESPONSE_SENT, connections.response_sent);
 
 

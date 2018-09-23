@@ -4,6 +4,10 @@ function removeElementById(id) {
     element.parentNode.removeChild(element);
 }
 
+function removeRow(connName) {
+    removeElementById(connName + '_row');
+}
+
 function getTodayDate() {
     var tdate = new Date();
     var dd = tdate.getDate(); //yields day

@@ -33,19 +33,20 @@ class Agent:
 class Message(object):
     """ Data Model for messages.
     """
-
-    def __init__(self, type, id, message):
+    def __init__(self, **kwargs):
         """ Create a Message object
 
-            type: string denoting the message type. Standardization efforts are in progress.
-            id: identifier for message. Usually a nonce or a DID. This combined with the type
-                tell us how to interpret the message.
-            message: ambiguous data. Interpretation defined by type and id.
+        type: string denoting the message type. Standardization efforts are in progress.
+        id: identifier for message. Usually a nonce or a DID. This combined with the type
+            tell us how to interpret the message.
+        message: ambiguous data. Interpretation defined by type and id.
 
         """
-        self.type = type
-        self.id = id
-        self.message = message
+        for key in kwargs.keys():
+            self.__setattr__(key, kwargs[key])
+
+    def to_dict(self):
+        return self.__dict__
 
 
 class NewMessage(object):

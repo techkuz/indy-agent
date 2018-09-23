@@ -27,6 +27,7 @@ from router.simple_router import SimpleRouter as Router
 from ui_event import UIEventQueue
 from model import Agent
 from message_types import CONN, UI, UI_NEW, CONN_NEW
+from model import Message
 
 
 if len(sys.argv) == 2 and str.isdigit(sys.argv[1]):
@@ -68,6 +69,7 @@ LOOP.run_until_complete(RUNNER.setup())
 
 SERVER = web.TCPSite(RUNNER, 'localhost', PORT)
 
+
 async def conn_process(agent):
     conn_router = agent['conn_router']
     conn_receiver = agent['conn_receiver']
@@ -87,6 +89,7 @@ async def conn_process(agent):
         if res is not None:
             await ui_event_queue.send(Serializer.pack(res))
 
+
 async def message_process(agent):
     """ Message processing loop task.
         Message routes are also defined here through the message router.
@@ -95,8 +98,8 @@ async def message_process(agent):
     msg_receiver = agent['msg_receiver']
     ui_event_queue = agent['ui_event_queue']
 
-    await msg_router.register(CONN_NEW.FORWARD_TO_KEY, connection.ftk_received)
-    await msg_router.register(CONN_NEW.FORWARD, connection.forward_received)
+    await msg_router.register(CONN_NEW.SEND_REQUEST, connection.request_received)
+    await msg_router.register(CONN_NEW.SEND_RESPONSE, connection.response_received)
 
     while True:
         encrypted_msg_bytes = await msg_receiver.recv()
@@ -107,12 +110,12 @@ async def message_process(agent):
             print('Failed to unpack message: {}\n\nError: {}'.format(encrypted_msg_bytes, e))
             continue
 
-        encrypted_msg_bytes = base64.b64decode(encrypted_msg_str.message.encode('utf-8'))
+        encrypted_msg_bytes = base64.b64decode(encrypted_msg_str.content.encode('utf-8'))
 
         try:
             decrypted_msg = await crypto.anon_decrypt(
                     AGENT['agent'].wallet_handle,
-                    AGENT['agent'].verkey,
+                    AGENT['agent'].endpoint_vk,
                     encrypted_msg_bytes
                     )
         except Exception as e:
@@ -125,10 +128,14 @@ async def message_process(agent):
             print('Failed to unpack message: {}\n\nError: {}'.format(decrypted_msg, e))
             continue
 
+        msg_content_str = msg.content
+        msg = Serializer.unpack(msg_content_str)
+
         res = await msg_router.route(msg, agent['agent'])
 
         if res is not None:
             await ui_event_queue.send(Serializer.pack(res))
+
 
 async def ui_event_process(agent):
     ui_router = agent['ui_router']
@@ -144,16 +151,17 @@ async def ui_event_process(agent):
     await ui_router.register(UI.INITIALIZE, init.initialize_agent)
 
     while True:
-        msg_bytes = await ui_event_queue.recv()
-        try:
-            msg = Serializer.unpack(msg_bytes)
-        except Exception as e:
-            print('Failed to unpack message: {}\n\nError: {}'.format(msg_bytes, e))
-            continue
+        msg = await ui_event_queue.recv()
 
+        if not isinstance(msg, Message):
+            try:
+                msg = Serializer.unpack(msg)
+            except Exception as e:
+                print('Failed to unpack message: {}\n\nError: {}'.format(msg, e))
+                continue
 
         if msg.id != UI_TOKEN:
-            print('Invalid token received, rejecting message: {}'.format(msg_bytes))
+            print('Invalid token received, rejecting message: {}'.format(msg))
             continue
 
         res = await ui_router.route(msg, agent['agent'])
