@@ -7,6 +7,11 @@ import json
 from model import Message
 
 
+def unpack_dict(dictionary: dict) -> Message:
+    deserialized_msg = Message(**dictionary)
+    return deserialized_msg
+
+
 def unpack(dump) -> Message:
     """
     Deserialize from bytes or str to Message

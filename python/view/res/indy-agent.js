@@ -23,9 +23,6 @@
             SEND_RESPONSE: "urn:sovrin:agent:message_type:sovrin.org/ui/send_response",
             RESPONSE_SENT: "urn:sovrin:agent:message_type:sovrin.org/ui/response_sent",
             RESPONSE_RECEIVED: "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response"
-        },
-        CONN: {
-
         }
     };
 

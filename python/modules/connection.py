@@ -14,7 +14,7 @@ from message_types import UI_NEW, CONN_NEW
 from helpers import serialize_bytes_json, bytes_to_str, str_to_bytes
 
 
-async def send_invite(msg, agent):
+async def send_invite(msg: Message, agent) -> Message:
     receiver_endpoint = msg.content['endpoint']
     conn_name = msg.content['name']
 
@@ -40,7 +40,7 @@ async def send_invite(msg, agent):
         content={'name': conn_name})
 
 
-async def invite_received(msg, agent):
+async def invite_received(msg: Message, agent) -> Message:
     conn_name = msg.content['name']
 
     return Message(
@@ -51,7 +51,7 @@ async def invite_received(msg, agent):
     )
 
 
-async def send_request(msg, agent):
+async def send_request(msg: Message, agent) -> Message:
     their_endpoint = msg.content['endpoint']
     conn_name = msg.content['name']
     connection_key = msg.content['key']
@@ -78,37 +78,36 @@ async def send_request(msg, agent):
 
     await did.set_did_metadata(agent.wallet_handle, endpoint_did_str, meta_json)
 
-    inner_msg = json.dumps(
-        {
-            'type': 'did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward_to_key',
-            'key': agent.endpoint_vk,
-            'content': json.dumps(
-                {
-                    'type': "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
-                    'key': agent.endpoint_vk,
-                    'endpoint': my_endpoint_uri,
-                    'content': serialize_bytes_json(await crypto.auth_crypt(agent.wallet_handle, endpoint_key, connection_key, endpoint_did_bytes))
-                }
-            )
-        }
+    inner_msg = Message(
+        type= "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
+        key= agent.endpoint_vk,
+        endpoint= my_endpoint_uri,
+        content= serialize_bytes_json(await crypto.auth_crypt(agent.wallet_handle, endpoint_key, connection_key, endpoint_did_bytes))
     )
 
-    inner_msg_bytes = str_to_bytes(inner_msg)
-
-    outer_message = json.dumps(
-        {
-            'type': CONN_NEW.SEND_REQUEST,
-            'content': serialize_bytes_json(await crypto.anon_crypt(connection_key, inner_msg_bytes))
-        }
+    outer_msg = Message(
+        type='did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward_to_key',
+        key=agent.endpoint_vk,
+        content=inner_msg
     )
 
-    # serialized_msg = Serializer.unpack(outer_message)
-    # print(serialized_msg, 'send')
+    serialized_outer_msg = Serializer.pack(outer_msg)
+
+    serialized_outer_msg_bytes = str_to_bytes(serialized_outer_msg)
+
+    all_message = Message(
+        type=CONN_NEW.SEND_REQUEST,
+        content=serialize_bytes_json(
+            await crypto.anon_crypt(connection_key,
+                                    serialized_outer_msg_bytes))
+    )
+
+    serialized_msg = Serializer.pack(all_message)
+
     async with aiohttp.ClientSession() as session:
-        async with session.post(their_endpoint, data=outer_message) as resp:
+        async with session.post(their_endpoint, data=serialized_msg) as resp:
             print(resp.status)
             print(await resp.text())
-
 
     return Message(
         type=UI_NEW.REQUEST_SENT,
@@ -117,7 +116,7 @@ async def send_request(msg, agent):
     )
 
 
-async def request_received(msg, agent):
+async def request_received(msg: Message, agent) -> Message:
     sender_endpoint_uri = msg.endpoint
     endpoint_key = msg.key
 
@@ -162,33 +161,37 @@ async def request_received(msg, agent):
     )
 
 
-async def send_response(msg, agent):
+async def send_response(msg: Message, agent) -> Message:
     receiver_endpoint_uri = msg.content['endpoint_uri']
     receiver_endpoint_key = msg.content['endpoint_key']
     receiver_endpoint_did = msg.content['endpoint_did']
     receiver_endpoint_did_bytes = str_to_bytes(receiver_endpoint_did)
 
-    inner_msg = json.dumps(
-        {
-            'type': "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response",
-            'to': "did:sov:ABC",
-            'content': serialize_bytes_json(await crypto.auth_crypt(agent.wallet_handle, agent.endpoint_vk, receiver_endpoint_key, receiver_endpoint_did_bytes))
-        }
+    inner_msg = Message(
+        type="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response",
+        to="did:sov:ABC",
+        content=serialize_bytes_json(await crypto.auth_crypt(agent.wallet_handle, agent.endpoint_vk, receiver_endpoint_key, receiver_endpoint_did_bytes))
     )
-    outer_msg = json.dumps({
-        'type': "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward",
-        'to': "ABC",
-        'content': inner_msg
-    })
 
-    outer_msg_bytes = str_to_bytes(outer_msg)
-    all_message = json.dumps({
-        'content': serialize_bytes_json(await crypto.anon_crypt(receiver_endpoint_key,
-                                                                outer_msg_bytes))
-    })
+    outer_msg = Message(
+        type="did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward",
+        to="ABC",
+        content=inner_msg
+    )
+
+    serialized_outer_msg = Serializer.pack(outer_msg)
+
+    serialized_outer_msg_bytes = str_to_bytes(serialized_outer_msg)
+
+    all_message = Message(
+        content=serialize_bytes_json(await crypto.anon_crypt(receiver_endpoint_key,
+                                                             serialized_outer_msg_bytes))
+    )
+
+    serialized_msg = Serializer.pack(all_message)
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(receiver_endpoint_uri, data=all_message) as resp:
+        async with session.post(receiver_endpoint_uri, data=serialized_msg) as resp:
             print(resp.status)
             print(await resp.text())
 
@@ -201,7 +204,7 @@ async def send_response(msg, agent):
                    content={'name': conn_name})
 
 
-async def response_received(msg, agent):
+async def response_received(msg: Message, agent) -> Message:
     message_bytes = msg.content.encode('utf-8')
     message_bytes = base64.b64decode(message_bytes)
 

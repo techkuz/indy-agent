@@ -128,8 +128,7 @@ async def message_process(agent):
             print('Failed to unpack message: {}\n\nError: {}'.format(decrypted_msg, e))
             continue
 
-        msg_content_str = msg.content
-        msg = Serializer.unpack(msg_content_str)
+        msg = Serializer.unpack_dict(msg.content)
 
         res = await msg_router.route(msg, agent['agent'])
 
@@ -145,7 +144,6 @@ async def ui_event_process(agent):
     await ui_router.register(UI_NEW.INVITE_RECEIVED, connection.invite_received)
     await ui_router.register(UI_NEW.SEND_REQUEST, connection.send_request)
     await ui_router.register(UI_NEW.SEND_RESPONSE, connection.send_response)
-
 
     await ui_router.register(UI.STATE_REQUEST, ui.ui_connect)
     await ui_router.register(UI.INITIALIZE, init.initialize_agent)
