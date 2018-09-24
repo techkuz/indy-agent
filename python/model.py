@@ -15,7 +15,6 @@ from indy import did, crypto
 class Agent:
     """ Data Model for all information needed for agent operation.
     """
-
     def __init__(self):
         self.owner = None
         self.wallet_handle = None
@@ -23,11 +22,8 @@ class Agent:
         self.endpoint_vk = None
         self.ui_token = None
         self.pool_handle = None
-        self.connections = {}
         self.ui_socket = None
         self.initialized = False
-        self.pending_offers = {}
-        self.received_offers = {}
 
 
 class Message(object):
@@ -47,27 +43,3 @@ class Message(object):
 
     def to_dict(self):
         return self.__dict__
-
-
-class NewMessage(object):
-    def __init__(self, *args, **kwargs):
-        for key in kwargs.keys():
-            self.__setattr__(key, kwargs[key])
-
-    async def auth_crypt_content(self, wallet_handle, sender_vk, recipient_vk, msg):
-        self.content = await crypto.auth_crypt(wallet_handle, sender_vk, recipient_vk, msg)
-
-    def auth_decrypt_content(self):
-        pass
-
-    def anon_crypt_content(self):
-        pass
-
-    def anon_decrypt_content(self):
-        pass
-
-    def to_json(self):
-        pass
-
-    def to_bytes(self):
-        pass

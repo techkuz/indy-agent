@@ -13,7 +13,6 @@ import modules.ui as ui
 async def initialize_agent(msg, agent):
     """ Initialize agent.
     """
-    print(msg, type(msg), vars(msg))
     data = msg.content
     agent.owner = data['name']
     passphrase = data['passphrase']
